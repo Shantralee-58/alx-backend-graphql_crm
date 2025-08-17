@@ -1,8 +1,10 @@
 import graphene
 from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 from django.db import transaction
 from django.core.exceptions import ValidationError
 import re
+from .filters import CustomerFilter, ProductFilter, OrderFilter
 from decimal import Decimal
 from .models import Customer, Product, Order
 
@@ -11,16 +13,19 @@ class CustomerType(DjangoObjectType):
     class Meta:
         model = Customer
         fields = '__all__'
+        interfaces = (graphene.relay.Node,)
 
 class ProductType(DjangoObjectType):
     class Meta:
         model = Product
         fields = '__all__'
+        interfaces = (graphene.relay.Node,)
 
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
         fields = '__all__'
+        interfaces = (graphene.relay.Node,)
 
 # Input Types for Mutations
 class CustomerInput(graphene.InputObjectType):
@@ -293,24 +298,38 @@ class CreateOrder(graphene.Mutation):
 class Query(graphene.ObjectType):
     hello = graphene.String(default_value="Hello, GraphQL!")
     
-    # Basic queries to test the models
-    all_customers = graphene.List(CustomerType)
-    all_products = graphene.List(ProductType)
-    all_orders = graphene.List(OrderType)
+    # Filtered connection fields (NEW - with advanced filtering)
+    all_customers = DjangoFilterConnectionField(CustomerType, filterset_class=CustomerFilter)
+    all_products = DjangoFilterConnectionField(ProductType, filterset_class=ProductFilter)
+    all_orders = DjangoFilterConnectionField(OrderType, filterset_class=OrderFilter)
     
+    # Simple list fields (for backward compatibility)
+    customers_list = graphene.List(CustomerType)
+    products_list = graphene.List(ProductType)
+    orders_list = graphene.List(OrderType)
+    
+    # Individual item queries
     customer = graphene.Field(CustomerType, id=graphene.ID())
     product = graphene.Field(ProductType, id=graphene.ID())
     order = graphene.Field(OrderType, id=graphene.ID())
     
-    def resolve_all_customers(self, info):
+    # Custom aggregation queries
+    customer_count = graphene.Int()
+    product_count = graphene.Int()
+    order_count = graphene.Int()
+    total_revenue = graphene.Float()
+    
+    # Resolvers for simple lists
+    def resolve_customers_list(self, info):
         return Customer.objects.all()
     
-    def resolve_all_products(self, info):
+    def resolve_products_list(self, info):
         return Product.objects.all()
     
-    def resolve_all_orders(self, info):
+    def resolve_orders_list(self, info):
         return Order.objects.all()
     
+    # Resolvers for individual items
     def resolve_customer(self, info, id):
         try:
             return Customer.objects.get(pk=id)
@@ -328,6 +347,21 @@ class Query(graphene.ObjectType):
             return Order.objects.get(pk=id)
         except Order.DoesNotExist:
             return None
+    
+    # Resolvers for aggregations
+    def resolve_customer_count(self, info):
+        return Customer.objects.count()
+    
+    def resolve_product_count(self, info):
+        return Product.objects.count()
+    
+    def resolve_order_count(self, info):
+        return Order.objects.count()
+    
+    def resolve_total_revenue(self, info):
+        from django.db.models import Sum
+        result = Order.objects.aggregate(total=Sum('total_amount'))
+        return float(result['total'] or 0)
 
 class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
