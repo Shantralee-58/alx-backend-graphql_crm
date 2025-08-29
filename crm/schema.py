@@ -7,6 +7,35 @@ import re
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 from decimal import Decimal
 from .models import Customer, Product, Order
+import graphene
+from crm.customers.models import Product  # adjust if your app structure differs
+
+class ProductType(graphene.ObjectType):
+    id = graphene.ID()
+    name = graphene.String()
+    stock = graphene.Int()
+
+class UpdateLowStockProducts(graphene.Mutation):
+    updated_products = graphene.List(ProductType)
+    success = graphene.String()
+
+    def mutate(self, info):
+        # Query products with stock < 10
+        low_stock_products = Product.objects.filter(stock__lt=10)
+        updated_products = []
+
+        for product in low_stock_products:
+            product.stock += 10  # increment stock
+            product.save()
+            updated_products.append(product)
+
+        return UpdateLowStockProducts(
+            updated_products=updated_products,
+            success=f"Updated {len(updated_products)} low-stock products"
+        )
+
+class Mutation(graphene.ObjectType):
+    update_low_stock_products = UpdateLowStockProducts.Field()
 
 # GraphQL Types
 class CustomerType(DjangoObjectType):
