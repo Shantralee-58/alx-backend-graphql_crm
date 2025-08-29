@@ -41,6 +41,11 @@ INSTALLED_APPS = [
     'django_filters',
     'crm',
     'crm.customers',
+    #'django_crontab',
+]
+
+CRONJOBS = [
+    ('*/5 * * * *', 'alx_backend_graphql.cron.log_crm_heartbeat'),
 ]
 
 GRAPHENE = {
