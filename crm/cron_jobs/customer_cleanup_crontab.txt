@@ -1,0 +1,1 @@
+printf '0 2 * * 0 /abs/path/.../clean_inactive_customers.sh >> /tmp/customer_cleanup_log.txt 2>&1' > crm/cron_jobs/customer_cleanup_crontab.txt
