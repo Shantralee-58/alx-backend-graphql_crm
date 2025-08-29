@@ -8,7 +8,7 @@ from .filters import CustomerFilter, ProductFilter, OrderFilter
 from decimal import Decimal
 from .models import Customer, Product, Order
 import graphene
-from crm.customers.models import Product  # adjust if your app structure differs
+from crm.models import Product  # adjust if your app structure differs
 
 class ProductType(graphene.ObjectType):
     id = graphene.ID()
