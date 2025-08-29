@@ -1,18 +1,11 @@
 #!/bin/bash
-# crm/cron_jobs/clean_inactive_customers.sh
 
-# Exit immediately if a command exits with a non-zero status
-set -e
+# Activate virtual environment
+source /c/Users/Admin/alx-backend-graphql-crm/venv/Scripts/activate
 
-# Go to the project root (adjust path if script is not inside project root)
-cd "$(dirname "$0")/../.."
+# Move to project directory
+cd /c/Users/Admin/alx-backend-graphql-crm
 
-# Activate the virtual environment
-source venv/scripts/activate
-
-# Run Django management command
-python manage.py clean_inactive_customers
-
-# Deactivate virtual environment
-deactivate
+# Run the management command and append output to log
+python manage.py clean_inactive_customers >> /tmp/customer_cleanup_log.txt 2>&1
 
